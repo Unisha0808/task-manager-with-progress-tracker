@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager - With Progress</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-light: #fffaf0;
+        --bg-dark: #2b2c3c;
+        --text-light: #333;
+        --text-dark: #fdfdfd;
+        --note-hover: #ffd1dc;
+        --note-shadow: rgba(0, 0, 0, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+        font-family: "Roboto", sans-serif;
+        transition: all 0.3s ease;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-light);
+        color: var(--text-light);
+      }
+      body.dark-mode {
+        background: var(--bg-dark);
+        color: var(--text-dark);
+      }
+      .container {
+        max-width: 950px;
+        margin: 2rem auto;
+        padding: 1rem;
+        text-align: center;
+      }
+      header h1 {
+        font-family: "Pacifico", cursive;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #ff8da1;
+        text-shadow: 1px 1px 5px #ffb6c1;
+        animation: blinkText 1.5s infinite alternate;
+      }
+      @keyframes blinkText {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      .toggle-mode {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border: none;
+        border-radius: 25px;
+        background-color: #ff8da1;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(255, 141, 161, 0.5);
+        margin-bottom: 1rem;
+      }
+      .toggle-mode:hover {
+        transform: scale(1.1);
+        background-color: #ffa3b3;
+      }
+      .task-form {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .task-form input[type="text"],
+      .task-form input[type="date"],
+      #search-input {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        font-size: 1.1rem;
+        border-radius: 25px;
+        border: 2px solid #ffb6c1;
+        outline: none;
+      }
+      .task-form input:focus {
+        border-color: #ff8da1;
+        box-shadow: 0 0 10px rgba(255, 141, 161, 0.5);
+      }
+      .task-form button {
+        padding: 0.6rem 1.5rem;
+        font-size: 1.1rem;
+        border: none;
+        border-radius: 25px;
+        background-color: #ff8da1;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(255, 141, 161, 0.5);
+      }
+      .task-form button:hover {
+        transform: scale(1.1);
+        background-color: #ffa3b3;
+      }
+      .tasks {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+      }
+      .task-note {
+        padding: 1.5rem;
+        min-width: 200px;
+        max-width: 260px;
+        text-align: center;
+        font-weight: 500;
+        font-size: 1.1rem;
+        cursor: grab;
+        box-shadow: 0 4px 8px var(--note-shadow);
+        animation: floatNote 3s ease-in-out infinite,
+          showNote 0.5s ease forwards;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .task-note:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 8px 12px var(--note-shadow);
+      }
+      @keyframes floatNote {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+      @keyframes showNote {
+        0% {
+          opacity: 0;
+          transform: translateY(30px) scale(0.8);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .sparkle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: white;
+        border-radius: 50%;
+        animation: sparkleAnim 1s infinite;
+      }
+      @keyframes sparkleAnim {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          opacity: 0;
+          transform: translateY(-10px) scale(0.5);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .task-note .done-btn {
+        margin-top: 8px;
+        padding: 4px 10px;
+        font-size: 0.9rem;
+        border: none;
+        border-radius: 15px;
+        background-color: #ff69b4;
+        color: white;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .task-note .done-btn:hover {
+        background-color: #ff85c1;
+        transform: scale(1.05);
+      }
+      .confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background-color: var(--note-hover);
+        opacity: 0.9;
+        animation: fall 2s linear forwards;
+      }
+      @keyframes fall {
+        0% {
+          transform: translateY(0) rotate(0deg);
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+        }
+      }
+      .progress-container {
+        margin-bottom: 1rem;
+      }
+      .progress-bar-bg {
+        background: #ffd1dc;
+        border-radius: 20px;
+        height: 10px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: #ff69b4;
+      }
+      @media (max-width: 600px) {
+        .task-note {
+          min-width: 80%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Task Manager - With Progress Tracker</h1>
+        <button class="toggle-mode">Dark Mode</button>
+      </header>
+
+      <!-- Progress Tracker -->
+      <div class="progress-container">
+        <label>Progress: <span id="progress-text">0%</span></label>
+        <div class="progress-bar-bg">
+          <div id="progress-bar" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <div class="task-form">
+        <input type="text" id="task-input" placeholder="Write your task..." />
+        <input type="date" id="task-date" />
+        <button id="add-task-btn">Add</button>
+      </div>
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Search tasks..."
+        style="margin-bottom: 1rem"
+      />
+      <div class="tasks" id="task-container"></div>
+    </div>
+    <div class="confetti" id="confetti-container"></div>
+
+    <script>
+      const addBtn = document.getElementById("add-task-btn");
+      const taskInput = document.getElementById("task-input");
+      const taskDate = document.getElementById("task-date");
+      const taskContainer = document.getElementById("task-container");
+      const toggleMode = document.querySelector(".toggle-mode");
+      const searchInput = document.getElementById("search-input");
+      const confettiContainer = document.getElementById("confetti-container");
+      const pastelColors = [
+        "#ffb6c1",
+        "#ffd1dc",
+        "#ffefdb",
+        "#e0bbe4",
+        "#ffcccb",
+        "#fcd5ce",
+        "#fde2e4",
+        "#f9dcc4",
+        "#ffe4e1",
+        "#ffccd5",
+      ];
+
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      let tasksDone = JSON.parse(localStorage.getItem("tasksDone")) || 0;
+      tasks.forEach((task) => createNote(task.text, task.date, task.shape));
+
+      let draggedNote = null;
+      taskContainer.addEventListener("dragover", (e) => e.preventDefault());
+      taskContainer.addEventListener("drop", (e) => {
+        e.preventDefault();
+        if (draggedNote) {
+          const notes = Array.from(taskContainer.children);
+          const afterElement = notes.find(
+            (note) =>
+              e.clientY <
+              note.getBoundingClientRect().top + note.offsetHeight / 2
+          );
+          if (afterElement)
+            taskContainer.insertBefore(draggedNote, afterElement);
+          else taskContainer.appendChild(draggedNote);
+          draggedNote = null;
+          saveTasks();
+        }
+      });
+
+      addBtn.addEventListener("click", () => {
+        const text = taskInput.value.trim();
+        if (!text) return;
+        const date = taskDate.value;
+        const shape = Math.floor(Math.random() * 3);
+        createNote(text, date, shape);
+        tasks.push({ text, date, shape });
+        saveTasks();
+        taskInput.value = "";
+        taskDate.value = "";
+        showNotification("Task added: " + text);
+        updateProgress();
+      });
+
+      function createNote(text, date, shape) {
+        const note = document.createElement("div");
+        note.className = "task-note";
+        note.style.backgroundColor =
+          pastelColors[Math.floor(Math.random() * pastelColors.length)];
+        if (shape === 1) note.style.borderRadius = "50px";
+        else if (shape === 2) note.style.transform = "rotate(-2deg)";
+        note.innerHTML = `<strong>${text}</strong>${
+          date ? `<br><small>Due: ${date}</small>` : ""
+        }<br><button class="done-btn">Done</button>`;
+        note.draggable = true;
+
+        const sparkle = document.createElement("div");
+        sparkle.className = "sparkle";
+        note.appendChild(sparkle);
+        note.addEventListener("dragstart", () => {
+          draggedNote = note;
+        });
+
+        note.querySelector(".done-btn").addEventListener("click", (e) => {
+          e.stopPropagation();
+          taskContainer.removeChild(note);
+          tasks = tasks.filter((t) => t.text !== text || t.date !== date);
+          saveTasks();
+          tasksDone++;
+          localStorage.setItem("tasksDone", tasksDone);
+          showNotification("Task completed: " + text);
+          triggerConfetti();
+          updateProgress();
+        });
+
+        taskContainer.appendChild(note);
+        updateProgress();
+      }
+
+      toggleMode.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+        toggleMode.innerText = document.body.classList.contains("dark-mode")
+          ? "Light Mode"
+          : "Dark Mode";
+      });
+
+      searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase();
+        Array.from(taskContainer.children).forEach((note) => {
+          note.style.display = note.innerText.toLowerCase().includes(query)
+            ? "block"
+            : "none";
+        });
+      });
+
+      function saveTasks() {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+      }
+
+      function showNotification(message) {
+        if ("Notification" in window) {
+          if (Notification.permission === "granted") new Notification(message);
+          else if (Notification.permission !== "denied")
+            Notification.requestPermission().then((p) => {
+              if (p === "granted") new Notification(message);
+            });
+        } else console.log(message);
+      }
+
+      function triggerConfetti() {
+        for (let i = 0; i < 30; i++) {
+          const c = document.createElement("div");
+          c.className = "confetti-piece";
+          c.style.left = Math.random() * 100 + "%";
+          c.style.backgroundColor =
+            pastelColors[Math.floor(Math.random() * pastelColors.length)];
+          c.style.animationDuration = 1 + Math.random() * 2 + "s";
+          confettiContainer.appendChild(c);
+          setTimeout(() => confettiContainer.removeChild(c), 3000);
+        }
+      }
+
+      function updateProgress() {
+        const total = tasks.length + tasksDone;
+        const progress =
+          total === 0 ? 0 : Math.round((tasksDone / total) * 100);
+        document.getElementById("progress-bar").style.width = progress + "%";
+        document.getElementById("progress-text").innerText = progress + "%";
+      }
+
+      // Initial call to show progress on load
+      updateProgress();
+    </script>
+  </body>
+</html>
