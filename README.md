@@ -49,10 +49,10 @@ Open index.html in your browser 🎉
 ## 📸 Screenshots
 
 ### 🌓 Dark Mode
-![light Mode](assets/screenshot1.png)
+![light Mode](assets/screenshot2.png)
 
 ### 🌞 Light Mode
-![dark Mode](assets/screenshot2.png)
+![dark Mode](assets/screenshot1.png)
 
 
 📌 Future Improvements

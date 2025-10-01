@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager With Progress Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-light: #fffaf0;
+      --bg-dark: #2b2c3c;
+      --text-light: #333;
+      --text-dark: #fdfdfd;
+      --note-hover: #ffd1dc;
+      --note-shadow: rgba(0, 0, 0, 0.2);
+    }
+    * {
+      box-sizing: border-box;
+      font-family: "Roboto", sans-serif;
+      transition: all 0.3s ease;
+    }
+    body {
+      margin: 0; padding: 0;
+      background: var(--bg-light);
+      color: var(--text-light);
+    }
+    body.dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    body.dark-mode .task-note {
+      background: #3a3b4f;   /* darker background for dark mode */
+      color: var(--text-dark);  /* light text */
+    }
+
+    body.dark-mode .task-note small {
+      color: #ddd;  /* lighter gray for readability */
+    }
+
+    .container { max-width: 1000px; margin: 2rem auto; padding: 1rem; text-align: center; }
+    header h1 {
+      font-family: "Pacifico", cursive;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #ff8da1;
+      text-shadow: 1px 1px 5px #ffb6c1;
+    }
+    .toggle-mode {
+      padding: 0.5rem 1rem; cursor: pointer; border: none; border-radius: 25px;
+      background-color: #ff8da1; color: white; font-weight: bold;
+      box-shadow: 0 4px 8px rgba(255,141,161,0.5);
+      margin-bottom: 1rem;
+    }
+    .toggle-mode:hover { transform: scale(1.05); background-color: #ffa3b3; }
+    .task-form, .controls {
+      display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    
+
+    .task-form input, .task-form select, .controls select, #search-input {
+      padding: 0.6rem 1rem; font-size: 1rem;
+      border-radius: 20px; border: 2px solid #ffb6c1; outline: none;
+    }
+    .task-form input:focus { border-color: #ff8da1; box-shadow: 0 0 10px rgba(255,141,161,0.5); }
+    .task-form button {
+      padding: 0.6rem 1.5rem; font-size: 1rem;
+      border: none; border-radius: 20px;
+      background-color: #ff8da1; color: white; cursor: pointer; font-weight: bold;
+      box-shadow: 0 4px 6px rgba(255,141,161,0.5);
+    }
+    .task-form button:hover { transform: scale(1.05); background-color: #ffa3b3; }
+    .stats { margin-bottom: 1rem; font-size: 1rem; font-weight: 500; }
+    .progress-container { margin-bottom: 1rem; }
+    .progress-bar-bg { background: #ffd1dc; border-radius: 20px; height: 12px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: #ff69b4; }
+    .tasks { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+    .task-note {
+      padding: 1.2rem; min-width: 200px; max-width: 250px;
+      font-size: 1rem; font-weight: 500; text-align: center;
+      cursor: grab; border-radius: 10px;
+      box-shadow: 0 4px 8px var(--note-shadow);
+      background: #ffe4ec;
+      position: relative; overflow: hidden;
+      transition: 0.3s;
+    }
+    .task-note:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 12px var(--note-shadow); }
+    .task-note small { font-size: 0.8rem; display: block; margin-top: 4px; }
+    .done-btn {
+      margin-top: 8px; padding: 4px 10px;
+      font-size: 0.9rem; border: none; border-radius: 15px;
+      background-color: #28a745; color: white; cursor: pointer;
+    }
+    .done-btn:hover { background: #34d058; }
+    .delete-btn {
+      margin-top: 8px; padding: 4px 10px;
+      font-size: 0.9rem; border: none; border-radius: 15px;
+      background-color: #dc3545; color: white; cursor: pointer;
+    }
+    .delete-btn:hover { background: #e85a67; }
+    .overdue { border: 2px solid red; }
+    @media(max-width:600px){ .task-note { min-width: 80%; } }
+
+    /* Fade-out animation for the task card */
+    .task-done {
+        animation: fadeOut 0.6s forwards;
+    }
+
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+
+   .confetti {
+    position: fixed;
+    width: 8px;
+    height: 14px;
+    opacity: 0.9;
+    animation: fall 3s linear forwards;
+  }
+
+  @keyframes fall {
+    to {
+        transform: translateY(100vh) rotate(1080deg);
+        opacity: 0;
+    }
+  }
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Task Manager With Progress Tracker</h1>
+      <button class="toggle-mode" id="themeToggle">Dark Mode</button>
+    </header>
+
+    <div class="stats">
+      Total: <span id="totalCount">0</span> |
+      Completed: <span id="completedCount">0</span> |
+      Pending: <span id="pendingCount">0</span>
+    </div>
+
+    <div class="progress-container">
+      <label>Progress: <span id="progress-text">0%</span></label>
+      <div class="progress-bar-bg"><div id="progress-bar" class="progress-bar-fill"></div></div>
+    </div>
+
+    <div class="task-form">
+      <input type="text" id="taskInput" placeholder="Task..."/>
+      <input type="date" id="taskDate"/>
+      <select id="taskCategory">
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Urgent">Urgent</option>
+        <option value="Low">Low Priority</option>
+      </select>
+      <button id="addTask">Add Task</button>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchTask" placeholder="Search tasks..."/>
+      <select id="filterCategory">
+        <option value="all">All Categories</option>
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Urgent">Urgent</option>
+        <option value="Low">Low Priority</option>
+      </select>
+      <select id="sortTasks">
+        <option value="none">Sort by</option>
+        <option value="date">Date</option>
+        <option value="category">Category</option>
+      </select>
+    </div>
+
+   
+
+<!-- ✅ Add this -->
+<div id="taskList" class="tasks"></div>
+
+
+
+  <script>
+    const taskInput = document.getElementById("taskInput");
+    const taskDate = document.getElementById("taskDate");
+    const taskCategory = document.getElementById("taskCategory");
+    const addTaskBtn = document.getElementById("addTask");
+    const taskList = document.getElementById("taskList");
+    const searchTask = document.getElementById("searchTask");
+    const filterCategory = document.getElementById("filterCategory");
+    const sortTasks = document.getElementById("sortTasks");
+    const themeToggle = document.getElementById("themeToggle");
+   
+
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      let filtered = tasks.filter(t => t.title.toLowerCase().includes(searchTask.value.toLowerCase()));
+      if(filterCategory.value !== "all") filtered = filtered.filter(t => t.category===filterCategory.value);
+      if(sortTasks.value==="date") filtered.sort((a,b)=>new Date(a.date)-new Date(b.date));
+      if(sortTasks.value==="category") filtered.sort((a,b)=>a.category.localeCompare(b.category));
+
+      filtered.forEach((task,index)=>{
+        const div=document.createElement("div");
+        div.className="task-note";
+        div.innerHTML=`<strong>${task.title}</strong>
+          <small>${task.category} | Due: ${task.date}</small>
+          <br>
+          <button class="done-btn">Done</button>
+          <button class="delete-btn">Delete</button>`;
+        if(task.completed) div.style.opacity="0.6";
+        if(task.date && new Date(task.date)<new Date() && !task.completed) div.classList.add("overdue");
+        div.querySelector(".done-btn").onclick=()=>{ 
+            completeTask(div, index); 
+        };
+
+
+        div.querySelector(".delete-btn").onclick=()=>{ tasks.splice(index,1); save(); };
+        taskList.appendChild(div);
+      });
+      updateStats();
+    }
+
+    function addTask() {
+      if(!taskInput.value.trim()||!taskDate.value) return alert("Enter task and due date!");
+      tasks.push({title:taskInput.value.trim(), date:taskDate.value, category:taskCategory.value, completed:false});
+      taskInput.value=""; taskDate.value="";
+      save();
+    }
+
+    function updateStats(){
+      const total=tasks.length;
+      const completed=tasks.filter(t=>t.completed).length;
+      const pending=total-completed;
+      document.getElementById("totalCount").innerText=total;
+      document.getElementById("completedCount").innerText=completed;
+      document.getElementById("pendingCount").innerText=pending;
+      const percent=total?Math.round((completed/total)*100):0;
+      document.getElementById("progress-bar").style.width=percent+"%";
+      document.getElementById("progress-text").innerText=percent+"%";
+    }
+
+    function completeTask(taskCard, index) {
+  taskCard.classList.add("task-done");
+
+  // 🎉 Scatter Confetti Effect
+  for (let i = 0; i < 50; i++) {
+    const confetti = document.createElement("div");
+    confetti.classList.add("confetti");
+
+    confetti.style.left = Math.random() * window.innerWidth + "px";
+    confetti.style.top = Math.random() * 200 + "px";
+    confetti.style.width = Math.random() * 10 + 5 + "px";
+    confetti.style.height = Math.random() * 16 + 8 + "px";
+    confetti.style.backgroundColor = getRandomColor();
+    confetti.style.animationDuration = (Math.random() * 2 + 2) + "s";
+
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 4000);
+  }
+
+  // ✅ Mark completed & hide after fade
+  setTimeout(() => {
+    tasks[index].completed = true;  // mark as done
+    taskCard.style.display = "none"; // hide from view
+    save();                         // save & re-render stats
+  }, 600);
+}
+
+
+
+
+
+   function getRandomColor() {
+    const colors = ["#ff4757", "#1e90ff", "#2ed573", "#ffa502", "#eccc68", "#a55eea", "#ff6b81", "#70a1ff"];
+    return colors[Math.floor(Math.random() * colors.length)];
+   }
+
+    
+
+
+
+    function save(){ localStorage.setItem("tasks",JSON.stringify(tasks)); renderTasks(); }
+
+    addTaskBtn.onclick=addTask;
+    searchTask.oninput=renderTasks;
+    filterCategory.onchange=renderTasks;
+    sortTasks.onchange=renderTasks;
+    themeToggle.onclick=()=>{ document.body.classList.toggle("dark-mode"); };
+
+    // Export
+    exportBtn.onclick=()=>{
+      const blob=new Blob([JSON.stringify(tasks)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download="tasks.json"; a.click();
+    };
+    // Import
+    importBtn.onclick=()=>importFile.click();
+    importFile.onchange=e=>{
+      const file=e.target.files[0]; if(!file)return;
+      const reader=new FileReader();
+      reader.onload=()=>{ tasks=JSON.parse(reader.result)||[]; save(); };
+      reader.readAsText(file);
+    };
+
+    renderTasks();
+  </script>
+</body>
+</html>
